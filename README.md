@@ -2,6 +2,7 @@
 A basic distortion plugin that implements a cubic softclip and a hardclip distortion alrogrithm.
 
 Sliders
+
 ---Volume: Controls the overall volume.
 
 --Hardclip Controls
