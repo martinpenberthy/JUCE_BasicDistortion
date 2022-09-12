@@ -24,6 +24,7 @@ BasicDistortionAudioProcessor::BasicDistortionAudioProcessor()
 {
   
   apvts.state.addListener(this);
+
   
 }
 
@@ -150,77 +151,221 @@ void BasicDistortionAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
     // This is here to avoid people getting screaming feedback
     // when they first compile a plugin, but obviously you don't need to keep
     // this code if your algorithm always overwrites all the output channels.
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+    for (int i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    //Get write pointers for both channels
-    float* const leftChannel = buffer.getWritePointer(0, 0);
-    float* const rightChannel = buffer.getWritePointer(1, 0);
-    //distProcess = !distProcess;
-    
-    //if(apvts.getParameter("DISTMODE")->getValue())
+  
     switch(distMode)
     {
+      //HARDCLIP
       case 1:
-        //HARDCLIP
-        //Loop through samples
-        for(auto i = 0; i < buffer.getNumSamples(); ++i)
+        for(int i = 0; i < totalNumOutputChannels; ++i)
         {
-          gainValue = apvts.getRawParameterValue("GAIN")->load();
-          distThreshold = apvts.getRawParameterValue("THRESHOLD")->load();
-          distModValue = apvts.getRawParameterValue("DISTVALUE")->load();
-          
-          //Process left channel
-          if(std::abs(leftChannel[i]) > distThreshold && i % distModValue == 0)
+          for(int j = 0; j < buffer.getNumSamples(); ++j)
           {
-            if(leftChannel[i] > 0.0f)
-              leftChannel[i] = (distThreshold * gainValue) / distThreshold;
-            else
-              leftChannel[i] = (-distThreshold * gainValue) / distThreshold;
-          }else
-            leftChannel[i] = leftChannel[i] * gainValue;
-          
-          //Process right channel
-          if(std::abs(rightChannel[i]) > distThreshold && i % distModValue == 0)
-          {
-            if(rightChannel[i] > 0.0f)
-              rightChannel[i] = (distThreshold * gainValue) / distThreshold;
-            else
-              rightChannel[i] = (-distThreshold * gainValue) / distThreshold;
-          }else
-            rightChannel[i] = rightChannel[i] * gainValue;
+            gainValue = apvts.getRawParameterValue("GAIN")->load();
+            distThreshold = apvts.getRawParameterValue("THRESHOLD")->load();
+            distModValue = apvts.getRawParameterValue("DISTVALUE")->load();
+            
+            auto sample = buffer.getSample(i, j);
+            //Process left channel
+            if(std::abs(sample) > distThreshold && j % distModValue == 0)
+            {
+              if(sample > 0.0f)
+                buffer.setSample(i, j, (distThreshold * gainValue) / distThreshold);
+              else
+                buffer.setSample(i, j, (-distThreshold * gainValue) / distThreshold);
+            }else
+              buffer.setSample(i, j, sample * gainValue);
+        
+          }
         }
         break;
-      
+        
+        //SOFTCLIP
       case 2:
-        for(auto i = 0; i < buffer.getNumSamples(); ++i)
+        for(int i = 0; i < totalNumOutputChannels; ++i)
         {
-          gainValue = apvts.getRawParameterValue("GAIN")->load();
-          //distThreshold = apvts.getRawParameterValue("THRESHOLD")->load();
-          distSoftAmount = apvts.getRawParameterValue("SOFTAMT")->load();
-          
-          //SOFTCLIP
-          //Process left sample
-          auto sample = leftChannel[i];
-          leftChannel[i] = (sample - (float)distSoftAmount * ((1.0f / 3.0f) * pow(sample, 3))) * gainValue;
-          
-          //Process right sample
-          sample = rightChannel[i];
-          rightChannel[i] = (sample - (float)distSoftAmount * ((1.0f / 3.0f) * pow(sample, 3))) * gainValue;
+          for(int j = 0; j < buffer.getNumSamples(); ++j)
+          {
+            gainValue = apvts.getRawParameterValue("GAIN")->load();
+            //distThreshold = apvts.getRawParameterValue("THRESHOLD")->load();
+            distSoftAmount = apvts.getRawParameterValue("SOFTAMT")->load();
+            
+            
+            //Process left sample
+            auto sample = buffer.getSample(i, j);
+            sample = sample - (float)distSoftAmount * ((1.0f / 3.0f) * pow(sample, 3)) * gainValue;
+            buffer.setSample(i, j, sample);
+
+          }
+        }
+        break;
+        
+        //HALFWAVE RECT
+      case 3:
+        for(int i = 0; i < totalNumOutputChannels; ++i)
+        {
+          for(int j = 0; j < buffer.getNumSamples(); ++j)
+          {
+            gainValue = apvts.getRawParameterValue("GAIN")->load();
+              
+            //Process left channel
+            auto sample =  buffer.getSample(i, j);
+            if(sample < 0.0f)
+              buffer.setSample(i, j, 0.0f);
+            else
+              buffer.setSample(i, j, sample * gainValue);
+          }
+        }
+        break;
+        
+      //FULLWAVE RECT
+      case 4:
+        for(int i = 0; i < totalNumOutputChannels; ++i)
+        {
+          for(int j = 0; j < buffer.getNumSamples(); ++j)
+          {
+            gainValue = apvts.getRawParameterValue("GAIN")->load();
+            
+            //Process left channel
+            auto sample =  buffer.getSample(i, j);
+            if(sample < 0.0f)
+              buffer.setSample(i, j, (sample * -1) * gainValue);
+            else
+              buffer.setSample(i, j, sample * gainValue);
+
+          }
         }
         break;
         
       default:
+        for(auto i = 0; i < totalNumOutputChannels; ++i)
+        {
+          for(auto j = 0; j < buffer.getNumSamples(); ++j)
+          {
+            gainValue = apvts.getRawParameterValue("GAIN")->load();
+            auto sample = buffer.getSample(i, j);
+
+            buffer.setSample(i, j, sample * gainValue);
+          }
+        }
+        break;
+    }//END SWITCH
+    
+  /*
+    //Get write pointers for both channels
+    float* const leftChannel = buffer.getWritePointer(0, 0);
+    float* const rightChannel = buffer.getWritePointer(1, 0);
+    //distProcess = !distProcess
+    
+    //if(apvts.getParameter("DISTMODE")->getValue())
+    switch(distMode)
+    {
+      //HARDCLIP
+      case 1:
+          //Loop through samples
+          for(auto i = 0; i < buffer.getNumSamples(); ++i)
+          {
+            gainValue = apvts.getRawParameterValue("GAIN")->load();
+            distThreshold = apvts.getRawParameterValue("THRESHOLD")->load();
+            distModValue = apvts.getRawParameterValue("DISTVALUE")->load();
+            
+            //Process left channel
+            if(std::abs(leftChannel[i]) > distThreshold && i % distModValue == 0)
+            {
+              if(leftChannel[i] > 0.0f)
+                leftChannel[i] = (distThreshold * gainValue) / distThreshold;
+              else
+                leftChannel[i] = (-distThreshold * gainValue) / distThreshold;
+            }else
+              leftChannel[i] = leftChannel[i] * gainValue;
+            
+            //Process right channel
+            if(std::abs(rightChannel[i]) > distThreshold && i % distModValue == 0)
+            {
+              if(rightChannel[i] > 0.0f)
+                rightChannel[i] = (distThreshold * gainValue) / distThreshold;
+              else
+                rightChannel[i] = (-distThreshold * gainValue) / distThreshold;
+            }else
+              rightChannel[i] = rightChannel[i] * gainValue;
+          }
+          break;
+      
+      //SOFTCLIP
+      case 2:
+          for(auto i = 0; i < buffer.getNumSamples(); ++i)
+          {
+            gainValue = apvts.getRawParameterValue("GAIN")->load();
+            //distThreshold = apvts.getRawParameterValue("THRESHOLD")->load();
+            distSoftAmount = apvts.getRawParameterValue("SOFTAMT")->load();
+            
+            
+            //Process left sample
+            auto sample = leftChannel[i];
+            leftChannel[i] = (sample - (float)distSoftAmount * ((1.0f / 3.0f) * pow(sample, 3))) * gainValue;
+            
+            //Process right sample
+            sample = rightChannel[i];
+            rightChannel[i] = (sample - (float)distSoftAmount * ((1.0f / 3.0f) * pow(sample, 3))) * gainValue;
+          }
+          break;
+        
+      //HALFWAVE RECT
+      case 3:
         for(auto i = 0; i < buffer.getNumSamples(); ++i)
         {
           gainValue = apvts.getRawParameterValue("GAIN")->load();
           
-          leftChannel[i] = leftChannel[i] * gainValue;
-          rightChannel[i] = rightChannel[i] * gainValue;
+          //Process left channel
+          auto sample = leftChannel[i];
+          if(sample < 0.0f)
+            leftChannel[i] = 0.0f;
+          else
+            leftChannel[i] = sample * gainValue;
+          
+          //Process right channel
+          sample = rightChannel[i];
+          if(sample < 0.0f)
+            rightChannel[i] = 0.0f;
+          else
+            rightChannel[i] = rightChannel[i] * gainValue;
         }
         break;
+        
+      case 4:
+        for(auto i = 0; i < buffer.getNumSamples(); ++i)
+        {
+          gainValue = apvts.getRawParameterValue("GAIN")->load();
+          
+          //Process left channel
+          auto sample = leftChannel[i];
+          if(sample < 0.0f)
+            leftChannel[i] = (sample * -1) * gainValue;
+          else
+            leftChannel[i] = sample * gainValue;
+          
+          //Process right channel
+          sample = rightChannel[i];
+          if(sample < 0.0f)
+            rightChannel[i] = (sample * -1) * gainValue;
+          else
+            rightChannel[i] = rightChannel[i] * gainValue;
+        }
+        break;
+        
+      default:
+          for(auto i = 0; i < buffer.getNumSamples(); ++i)
+          {
+            gainValue = apvts.getRawParameterValue("GAIN")->load();
+            
+            leftChannel[i] = leftChannel[i] * gainValue;
+            rightChannel[i] = rightChannel[i] * gainValue;
+          }
+          break;
     }//End switch
-  
+    */
 
 }//End processBlock
 
@@ -242,20 +387,20 @@ void BasicDistortionAudioProcessor::getStateInformation (juce::MemoryBlock& dest
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
   
- /* auto state = apvts.copyState();
+  auto state = apvts.copyState();
   std::unique_ptr<juce::XmlElement> xml (state.createXml());
-BasicDistortionAudioProcessor::copyXmlToBinary (*xml, destData);*/
+  copyXmlToBinary (*xml, destData);
 }
 
 void BasicDistortionAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
-  /*std::unique_ptr<juce::XmlElement> xmlState (BasicDistortionAudioProcessor::getXmlFromBinary (data, sizeInBytes));
+  std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
 
     if (xmlState.get() != nullptr)
         if (xmlState->hasTagName (apvts.state.getType()))
-            apvts.replaceState (juce::ValueTree::fromXml (*xmlState));*/  
+          apvts.replaceState (juce::ValueTree::fromXml (*xmlState));
 }
 
 //==============================================================================

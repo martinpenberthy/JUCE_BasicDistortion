@@ -43,7 +43,9 @@ BasicDistortionAudioProcessorEditor::BasicDistortionAudioProcessorEditor (BasicD
   addAndMakeVisible (distLabel);
   modeMenu.addItem ("Hard Clip",  1);
   modeMenu.addItem ("Soft Clip",   2);
-
+  modeMenu.addItem ("Halfwave Rect",   3);
+  modeMenu.addItem ("Fullwave Rect",   4);
+  
   modeMenu.onChange = [this] { modeMenuChanged(); };
   modeMenu.setSelectedId (0);
   
@@ -58,16 +60,12 @@ BasicDistortionAudioProcessorEditor::BasicDistortionAudioProcessorEditor (BasicD
   addAndMakeVisible(mSliderDistThresh);
   addAndMakeVisible(mSliderDistMod);
   addAndMakeVisible(mSliderSoftAmount);
-  addAndMakeVisible(mDistButton);
   addAndMakeVisible(modeMenu);
 
   
   mVolSliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "GAIN", mSliderVol);
   
   mVolDistThreshAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "THRESHOLD", mSliderDistThresh);
-  
-  mDistModeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, "DISTMODE", mDistButton);
-  
   
   mDistValueAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "DISTVALUE", mSliderDistMod);
   
@@ -114,9 +112,15 @@ void BasicDistortionAudioProcessorEditor::modeMenuChanged()
         case 2:
             audioProcessor.distMode = 2;
             break;
+        case 3:
+            audioProcessor.distMode = 3;
+            break;
+        case 4:
+          audioProcessor.distMode = 4;
+          break;
       
       default:
-        audioProcessor.distMode = 0;
+          audioProcessor.distMode = 0;
           break;
     }
 
