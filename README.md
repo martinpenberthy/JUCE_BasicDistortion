@@ -2,6 +2,7 @@
 A basic distortion plugin that implements a cubic softclip and a hardclip distortion alrogrithm.
 
 Menu
+
 Used to select the distortion mode that is to be used. Half and fullwave rectification are either on or off and do not have any controls for the amount of distortion.
 
 
