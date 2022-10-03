@@ -163,14 +163,17 @@ void BasicDistortionAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
         {
           for(int j = 0; j < buffer.getNumSamples(); ++j)
           {
+            //Get slider values
             gainValue = apvts.getRawParameterValue("GAIN")->load();
             distThreshold = apvts.getRawParameterValue("THRESHOLD")->load();
             distModValue = apvts.getRawParameterValue("DISTVALUE")->load();
             
             auto sample = buffer.getSample(i, j);
-            //Process left channel
+            
+            //Determine if the sample value must be processed
             if(std::abs(sample) > distThreshold && j % distModValue == 0)
             {
+              //Set new value
               if(sample > 0.0f)
                 buffer.setSample(i, j, (distThreshold * gainValue) / distThreshold);
               else
@@ -188,13 +191,10 @@ void BasicDistortionAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
         {
           for(int j = 0; j < buffer.getNumSamples(); ++j)
           {
-            gainValue = apvts.getRawParameterValue("GAIN")->load();
-            //distThreshold = apvts.getRawParameterValue("THRESHOLD")->load();
             distSoftAmount = apvts.getRawParameterValue("SOFTAMT")->load();
             
-            
-            //Process left sample
             auto sample = buffer.getSample(i, j);
+            //Subtract the cube of the sample from itself
             sample = sample - (float)distSoftAmount * ((1.0f / 3.0f) * pow(sample, 3)) * gainValue;
             buffer.setSample(i, j, sample);
 
@@ -210,8 +210,8 @@ void BasicDistortionAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
           {
             gainValue = apvts.getRawParameterValue("GAIN")->load();
               
-            //Process left channel
             auto sample =  buffer.getSample(i, j);
+            //If the sample is negative, set it to 0
             if(sample < 0.0f)
               buffer.setSample(i, j, 0.0f);
             else
@@ -228,8 +228,8 @@ void BasicDistortionAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
           {
             gainValue = apvts.getRawParameterValue("GAIN")->load();
             
-            //Process left channel
             auto sample =  buffer.getSample(i, j);
+            //If the sample is negative, make it positive
             if(sample < 0.0f)
               buffer.setSample(i, j, (sample * -1) * gainValue);
             else
@@ -423,7 +423,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout BasicDistortionAudioProcesso
   //std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
   
   //Add a float parameter for the Gain value
-  params.add(std::make_unique<juce::AudioParameterFloat>("GAIN", "Gain", 0.0f, 1.0f, 0.25f));
+  params.add(std::make_unique<juce::AudioParameterFloat>("GAIN", "Gain", 0.0f, 1.5f, 0.25f));
   params.add(std::make_unique<juce::AudioParameterFloat>("THRESHOLD", "Threshold", 0.1f, 1.0f, 1.0f));
   params.add(std::make_unique<juce::AudioParameterBool>("DISTMODE", "DistMode", true));
   params.add(std::make_unique<juce::AudioParameterInt>("DISTVALUE", "DistValue", 0, 100, 1));

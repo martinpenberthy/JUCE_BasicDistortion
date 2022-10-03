@@ -20,18 +20,22 @@ BasicDistortionAudioProcessorEditor::BasicDistortionAudioProcessorEditor (BasicD
   mSliderVol.setColour(juce::Slider::trackColourId, juce::Colour::fromRGBA(255, 255, 255, 100));
   mLabelVol.attachToComponent(&mSliderVol, true);
   mLabelVol.setText("Volume", juce::dontSendNotification);
+  mVolSliderAttachment.reset (new juce::AudioProcessorValueTreeState::SliderAttachment (p.apvts, "GAIN", mSliderVol));
   
   mSliderDistThresh.setSliderStyle (juce::Slider::LinearBarVertical);
  // mSliderDistThresh.setTextBoxStyle(juce::Slider::TextBoxBelow, true, 40, 20);
   mSliderDistThresh.setColour(juce::Slider::trackColourId, juce::Colour::fromRGBA(255, 255, 255, 100));
   mLabelDistThresh.attachToComponent(&mSliderDistThresh, true);
   mLabelDistThresh.setText("Thresh", juce::dontSendNotification);
+  mVolDistThreshAttachment.reset (new juce::AudioProcessorValueTreeState::SliderAttachment (p.apvts, "THRESHOLD", mSliderDistThresh));
+
   
   mSliderDistMod.setSliderStyle (juce::Slider::LinearBarVertical);
   //mSliderDistMod.setTextBoxStyle(juce::Slider::TextBoxBelow, true, 40, 20);
   mSliderDistMod.setColour(juce::Slider::trackColourId, juce::Colour::fromRGBA(255, 255, 255, 100));
   mLabelDistMod.attachToComponent(&mSliderDistMod, true);
   mLabelDistMod.setText("Mod", juce::dontSendNotification);
+  mDistValueAttachment.reset (new juce::AudioProcessorValueTreeState::SliderAttachment (p.apvts, "DISTVALUE", mSliderDistMod));
   
   
   mSliderSoftAmount.setSliderStyle (juce::Slider::LinearBarVertical);
@@ -39,6 +43,9 @@ BasicDistortionAudioProcessorEditor::BasicDistortionAudioProcessorEditor (BasicD
   mSliderSoftAmount.setColour(juce::Slider::trackColourId, juce::Colour::fromRGBA(255, 255, 255, 100));
   mLabelSoftAmount.attachToComponent(&mSliderSoftAmount, true);
   mLabelSoftAmount.setText("SoftAmt", juce::dontSendNotification);
+  mSoftAmountAttachment.reset (new juce::AudioProcessorValueTreeState::SliderAttachment (p.apvts, "SOFTAMT", mSliderSoftAmount));
+  
+  
   
   addAndMakeVisible (distLabel);
   modeMenu.addItem ("Hard Clip",  1);
@@ -124,14 +131,4 @@ void BasicDistortionAudioProcessorEditor::modeMenuChanged()
           break;
     }
 
-  //distLabel.setFont (textFont);
 }
-
-
-/*void BasicDistortionAudioProcessorEditor::updateToggleState (juce::Button* button, juce::String name)
-{
- //std::cout << "state toggle" << std::endl;
-  //audioProcessor.distMode = !audioProcessor.distMode;
-}
-
-*/
