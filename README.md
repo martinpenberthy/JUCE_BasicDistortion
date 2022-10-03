@@ -1,5 +1,5 @@
 # JUCE_BasicDistortion
-A basic distortion plugin that implements a cubic softclip and a hardclip distortion alrogrithm.
+A basic distortion plugin that implements a cubic, softclip and a hardclip distortion alrogrithm.
 
 Menu
 
