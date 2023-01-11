@@ -16,3 +16,6 @@ Sliders
   
 --Softclip Controls
   -Softamt: Constant multiplier for the value being subtracted from the input signal
+
+--Halfwave Rectification
+--Fullwave Rectification
